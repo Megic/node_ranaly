@@ -1,4 +1,5 @@
 var moment = require('moment');
+var thunkify = require('thunkify');
 var ZMSCORE = ' \
 local result = {} \
 local length = #ARGV \
@@ -61,13 +62,13 @@ return score \
 ';
 module.exports = function (ranaly) {
   var db = ranaly.redisClient;
-
   var Amount = function (bucket) {
     this.bucket = bucket;
     this.key = ranaly.prefix + 'AMOUNT' + ':' + this.bucket;
   };
 
-  Amount.prototype.incr = function (increment, when, callback) {
+  Amount.prototype.incr = thunkify(function (increment, when, callback) {
+
     if (typeof increment === 'function') {
       callback = increment;
       increment = void 0;
@@ -80,23 +81,23 @@ module.exports = function (ranaly) {
     }
     when = moment(when);
     db.multi()
-      .incrby(this.key + ':TOTAL', increment)
-      .zincrby(this.key, increment,when.format('YYYYMMDDHH'))
-      .exec(function (err, result) {
-        if (typeof callback === 'function') {
-          callback(err, Array.isArray(result) ? result[0] : result);
-        }
-      });
-  };
+        .incrby(this.key + ':TOTAL', increment)
+        .zincrby(this.key, increment,when.format('YYYYMMDDHH'))
+        .exec(function (err, result) {
+          if (typeof callback === 'function') {
+            callback(err, Array.isArray(result) ? result[0] : result);
+          }
+        });
+  });
 
-  Amount.prototype.get = function (timeList, callback) {
+  Amount.prototype.get = thunkify(function (timeList, callback) {
     var next = function (err, result) {
       callback(err, result);
     };
     db['eval'].apply(db, [ZMSCORE].concat(1).concat(this.key).concat(timeList).concat(next));
-  };
+  });
 
-  Amount.prototype.sum = function (timeList, callback) {
+  Amount.prototype.sum = thunkify(function (timeList, callback) {
     var next = function (err, result) {
       callback(err, result);
     };
@@ -107,7 +108,7 @@ module.exports = function (ranaly) {
       tl = tl.concat(next);
     }
     db['eval'].apply(db, tl);
-  };
+  });
 
   return Amount;
 };

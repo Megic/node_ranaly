@@ -1,3 +1,4 @@
+var thunkify = require('thunkify');
 module.exports = function (ranaly) {
   var db = ranaly.redisClient;
 
@@ -6,7 +7,7 @@ module.exports = function (ranaly) {
     this.channel = this.key = ranaly.prefix + 'REALTIME' + ':' + this.bucket;
   };
 
-  Realtime.prototype.incr = function (increment, callback) {
+  Realtime.prototype.incr = thunkify(function (increment, callback) {
     if (typeof increment === 'function') {
       callback = increment;
       increment = void 0;
@@ -23,19 +24,19 @@ module.exports = function (ranaly) {
         callback(err, result);
       }
     });
-  };
+  });
 
-  Realtime.prototype.get = function (callback) {
+  Realtime.prototype.get = thunkify(function (callback) {
     db.get(this.key, function (err, result) {
       callback(err, parseInt(result, 10) || 0);
     });
-  };
+  });
 
-  Realtime.prototype.set = function (value, callback) {
+  Realtime.prototype.set = thunkify(function (value, callback) {
     value = parseInt(value, 10) || 0;
     db.set(this.key, value, callback);
     db.publish(this.channel, value);
-  };
+  });
 
   return Realtime;
 };

@@ -1,3 +1,4 @@
+var thunkify = require('thunkify');
 module.exports = function (ranaly) {
   var db = ranaly.redisClient;
 
@@ -6,7 +7,7 @@ module.exports = function (ranaly) {
     this.key = ranaly.prefix + 'DATALIST' + ':' + this.bucket;
   };
 
-  DataList.prototype.push = function (data, trim, callback) {
+  DataList.prototype.push = thunkify(function (data, trim, callback) {
     if (typeof trim === 'function') {
       callback = trim;
       trim = void 0;
@@ -27,9 +28,9 @@ module.exports = function (ranaly) {
             callback(err, result);
           }
         });
-  };
+  });
 
-  DataList.prototype.range = function (start, stop, callback) {
+  DataList.prototype.range = thunkify(function (start, stop, callback) {
     db.lrange(this.key, start, stop, function (err, result) {
       if (!err && Array.isArray(result)) {
         result = result.map(function (r) {
@@ -38,11 +39,11 @@ module.exports = function (ranaly) {
       }
       callback(err, result);
     });
-  };
+  });
 
-  DataList.prototype.len = function (callback) {
+  DataList.prototype.len = thunkify(function (callback) {
     db.llen(this.key, callback);
-  };
+  });
 
   return DataList;
 };

@@ -14,7 +14,8 @@
   },
   "dependencies": {
     "redis": "0.8.2",
-    "moment": "2.0.0"
+    "moment": "2.0.0",
+    "thunkify":"*"
   },
   "devDependencies": {
     "mocha": "*"
